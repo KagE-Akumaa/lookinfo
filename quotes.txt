@@ -1,0 +1,103 @@
+Build slowly. Build deeply.
+Consistency beats intensity.
+Small progress compounds.
+Master the fundamentals.
+The work accumulates.
+One bug closer to mastery.
+Debugging is understanding.
+Read the code. The code tells the truth.
+First make it work, then make it right.
+Make it right, then make it fast.
+Complexity is earned.
+Simple scales.
+Measure before optimizing.
+Premature optimization is expensive.
+Every abstraction leaks eventually.
+A good engineer understands the tradeoffs.
+Code is read more than it is written.
+Clear code is a feature.
+The compiler is a teacher.
+The debugger is a microscope.
+Slow down to speed up.
+Systems reward patience.
+Discipline creates freedom.
+The difficult path becomes the easy path.
+Understanding scales better than memorization.
+Knowledge compounds like interest.
+A proof is a program of ideas.
+Patterns become tools.
+Mastery is built one day at a time.
+The best optimization is deleting unnecessary work.
+Think before you code.
+Design before you optimize.
+A working prototype teaches more than a perfect plan.
+Good software starts with good thinking.
+A bug is a misunderstanding made visible.
+The machine only does what you tell it.
+The machine is never impressed.
+Correctness before cleverness.
+Reliability beats brilliance.
+The fundamentals never expire.
+Every expert was once confused.
+Every project teaches something.
+Every failure contains data.
+The keyboard cannot replace understanding.
+Skill is built in repetitions.
+The hard part is thinking.
+Focus is a competitive advantage.
+Deep work beats shallow effort.
+The best code is obvious.
+The simplest solution is often the strongest.
+Learn the rules before breaking them.
+The terminal is a laboratory.
+Curiosity is a force multiplier.
+The best engineers keep learning.
+Progress hides in daily practice.
+Systems thinking solves hard problems.
+A good question saves hours.
+Read documentation.
+Read source code.
+Read error messages carefully.
+The logs are trying to help you.
+Most bugs are assumptions.
+Most performance issues are guesses.
+Most complexity is accidental.
+Build tools that build tools.
+Automate what repeats.
+Write code for your future self.
+Your future self is another developer.
+Version control is memory.
+Every commit tells a story.
+Leave the code cleaner than you found it.
+A clean interface hides complexity.
+The best architecture feels boring.
+Boring technology wins surprisingly often.
+Correctness creates confidence.
+Confidence comes from preparation.
+Preparation beats motivation.
+Motivation starts the journey.
+Discipline finishes it.
+The best shortcut is consistency.
+Trust the process.
+Stay in the game long enough to improve.
+Difficult does not mean impossible.
+Persistence outlasts talent.
+Learning is never wasted.
+Quality comes from attention.
+Attention comes from focus.
+Focus comes from intention.
+Strong foundations support ambitious projects.
+The details matter.
+Engineering is managing constraints.
+Good engineers solve problems.
+Great engineers prevent them.
+The system is the product.
+Understand the system.
+Think in models.
+Think in tradeoffs.
+Think in feedback loops.
+Build. Measure. Learn.
+Progress over perfection.
+One line at a time.
+One problem at a time.
+One day at a time.
