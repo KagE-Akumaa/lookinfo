@@ -1,3 +1,4 @@
+#include "weather.hpp"
 #include <cstring>
 #include <errno.h>
 #include <fcntl.h>
@@ -201,7 +202,9 @@ int main() {
 
         // NOTE: This is for the weather.txt
         std::filesystem::path weather_path = final_path / "weather.txt";
-        std::string weather_info = "🌦️ 23°C • Shimla";
+        Weather weather("Ontario");
+
+        std::string weather_info = weather.exec();
         if (fileHandler(weather_path, weather_info) == -1)
                 return -1;
 
