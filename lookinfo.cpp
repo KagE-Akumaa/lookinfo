@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <filesystem>
+#include <format>
 #include <iostream>
 #include <random>
 #include <unistd.h>
@@ -13,7 +14,7 @@
 std::string getQuotesInfo() {
         // Step - 1 Open the file
 
-        std::filesystem::path file_path = "quotes.txt";
+        std::filesystem::path file_path = "./quotes.txt";
 
         // NOTE: permission only required when we are creating the file using
         // O_CREAT in this case it's ignored
@@ -202,10 +203,26 @@ int main() {
 
         // NOTE: This is for the weather.txt
         std::filesystem::path weather_path = final_path / "weather.txt";
-        Weather weather("Ontario");
+        Weather weather;
 
-        std::string weather_info = weather.exec();
-        if (fileHandler(weather_path, weather_info) == -1)
+        // NOTE: You need to provide a url which gives the weather such as open
+        // mateo
+        std::string url = "https://api.open-meteo.com/v1/"
+                          "forecast?latitude=31.1044&longitude=77.1666&daily="
+                          "temperature_2m_max,temperature_2m_min&current="
+                          "temperature_2m&timezone=auto&forecast_days=1";
+
+        Weather_info w = weather.getWeatherInfo(url);
+
+        if (w.current == 0.0 && w.max == 0.0 && w.min == 0.0) {
+                std::cerr << "Failed to fetch the weather info" << std::endl;
+                return -1;
+        }
+        std::string current = std::format("{}", w.current);
+        std::string weatherText = "🌦️ " + std::to_string(w.current) + "°C | ↑" +
+                                  std::to_string(w.max) + "° ↓" +
+                                  std::to_string(w.min) + "°";
+        if (fileHandler(weather_path, weatherText) == -1)
                 return -1;
 
         // NOTE: This is for the quotes.txt
