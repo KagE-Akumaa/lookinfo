@@ -1,8 +1,14 @@
 #include <chrono>
 #include <curl/curl.h>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
-
+using json = nlohmann::json;
+struct Weather {
+        double current;
+        double max;
+        double min;
+};
 // Callback function to handle incoming data chunks
 size_t callback(void *contents, size_t size, size_t nmemb, void *userp) {
         size_t totalSize = size * nmemb;
@@ -18,18 +24,15 @@ int main() {
         // Got the handle object
         CURL *handle = curl_easy_init();
 
-        std::string url =
-            "https://api.open-meteo.com/v1/"
-            "forecast?latitude=31.1044&longitude=77.1666&models=best_match&"
-            "current=temperature_2m&timezone=auto&forecast_days=1";
+        std::string response_body;
+        std::string url = "https://api.open-meteo.com/v1/"
+                          "forecast?latitude=31.1044&longitude=77.1666&daily="
+                          "temperature_2m_max,temperature_2m_min&current="
+                          "temperature_2m&timezone=auto&forecast_days=1";
         if (handle) {
 
-                std::string response_body;
                 long http_code;
 
-                curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
-                curl_easy_setopt(handle, CURLOPT_HTTP_VERSION,
-                                 CURL_HTTP_VERSION_1_1);
                 // Step -1 Set the url -> requires handle, flag, the url
                 curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
 
@@ -41,10 +44,6 @@ int main() {
                 // Step - 3 Pass the pointer to our string where data will be
                 // stored
                 curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response_body);
-
-                curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
-
-                curl_easy_setopt(handle, CURLOPT_FORBID_REUSE, 1L);
 
                 // Step - 4 perform the operation synchronously
                 CURLcode res = curl_easy_perform(handle);
@@ -76,8 +75,18 @@ int main() {
         // 4. Output the result using .count()
         std::cout << "Elapsed time: " << elapsed.count() << " ms\n";
         std::cout << "before Global cleanup\n";
-        // Global cleanup call once only
 
+        json data = json::parse(response_body);
+
+        Weather w;
+        w.current = data["current"]["temperature_2m"];
+        w.max = data["daily"]["temperature_2m_max"][0];
+        w.min = data["daily"]["temperature_2m_min"][0];
+
+        std::cout << "current : " << w.current << std::endl;
+        std::cout << "min : " << w.min << std::endl;
+        std::cout << "max : " << w.max << std::endl;
+        // Global cleanup call once only
         curl_global_cleanup();
 
         std::cout << "after Global cleanup\n";
