@@ -1,0 +1,29 @@
+# Build directories
+build/
+cmake-build-*/
+
+# Executables
+lookinfo
+*.out
+*.exe
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+Makefile
+
+# Editor
+.vscode/
+.idea/
+
+# Neovim swap files
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
