@@ -14,7 +14,7 @@
 std::string getQuotesInfo() {
         // Step - 1 Open the file
 
-        std::filesystem::path file_path = "./quotes.txt";
+        std::filesystem::path file_path = "../data/quotes.txt";
 
         // NOTE: permission only required when we are creating the file using
         // O_CREAT in this case it's ignored
@@ -218,10 +218,11 @@ int main() {
                 std::cerr << "Failed to fetch the weather info" << std::endl;
                 return -1;
         }
-        std::string current = std::format("{}", w.current);
-        std::string weatherText = "🌦️ " + std::to_string(w.current) + "°C | ↑" +
-                                  std::to_string(w.max) + "° ↓" +
-                                  std::to_string(w.min) + "°";
+        std::string current = std::format("{:.1f}", w.current);
+        std::string max = std::format("{:.1f}", w.max);
+        std::string min = std::format("{:.1f}", w.min);
+        std::string weatherText =
+            "🌦️ " + current + "°C | ↑" + max + "° ↓" + min + "°";
         if (fileHandler(weather_path, weatherText) == -1)
                 return -1;
 

@@ -11,8 +11,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(CURL REQUIRED)
 
 add_executable(lockinfo
-    lookinfo.cpp
-    weather.cpp
+    src/lookinfo.cpp
+    src/weather.cpp
 )
 
+target_include_directories(lockinfo PRIVATE include)
+
 target_link_libraries(lockinfo PRIVATE CURL::libcurl)
+
+target_compile_options(lockinfo PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+)
