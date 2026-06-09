@@ -11,8 +11,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(CURL REQUIRED)
 
 add_executable(lockinfo
-    src/lookinfo.cpp
+    src/main.cpp
     src/weather.cpp
+    src/quoteService.cpp
+    src/fileHandler.cpp
+    src/pathFinder.cpp
 )
 
 target_include_directories(lockinfo PRIVATE include)
