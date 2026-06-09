@@ -1,6 +1,8 @@
 #pragma once
 
+#include "IService.hpp"
 #include <curl/curl.h>
+#include <filesystem>
 #include <memory>
 
 struct Weather_info {
@@ -8,7 +10,7 @@ struct Weather_info {
         double max;
         double min;
 };
-class Weather {
+class WeatherService : public IService {
         //
       private:
         // NOTE: This is a tiny RAII wrapper for Global init/closeup
@@ -29,12 +31,18 @@ class Weather {
 
         SafeCurl curl;
 
+        std::string url;
+
+        std::filesystem::path weather_path;
+
       public:
-        Weather();
+        WeatherService(std::filesystem::path weather_path, std::string url);
 
-        Weather(const Weather &) = delete;
+        WeatherService(const WeatherService &) = delete;
 
-        Weather &operator=(const Weather &) = delete;
+        WeatherService &operator=(const WeatherService &) = delete;
 
-        Weather_info getWeatherInfo(std::string url);
+        Weather_info getWeatherInfo();
+
+        bool update() override;
 };

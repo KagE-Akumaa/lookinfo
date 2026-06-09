@@ -1,9 +1,14 @@
 #include "weather.hpp"
+#include "fileHandler.hpp"
+#include <format>
 #include <iostream>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-Weather::Weather() {
+WeatherService::WeatherService(std::filesystem::path weather_path,
+                               std::string url) {
+        this->weather_path = weather_path;
+        this->url = url;
         static CurlGlobal globalSetup;
         curl.reset(curl_easy_init());
 }
@@ -15,7 +20,7 @@ size_t callback(void *contents, size_t size, size_t nmemb, void *userp) {
         return totalSize;
 }
 
-Weather_info Weather::getWeatherInfo(std::string url) {
+Weather_info WeatherService::getWeatherInfo() {
         std::string response_body;
         Weather_info w{};
         if (curl) {
@@ -66,4 +71,17 @@ Weather_info Weather::getWeatherInfo(std::string url) {
         }
 
         return w;
+}
+
+bool WeatherService::update() {
+        Weather_info w = getWeatherInfo();
+        std::string current = std::format("{:.1f}", w.current);
+        std::string max = std::format("{:.1f}", w.max);
+        std::string min = std::format("{:.1f}", w.min);
+        std::string weatherText =
+            "🌦️ " + current + "°C | ↑" + max + "° ↓" + min + "°";
+        if (!fileWriter(weather_path, weatherText))
+                return false;
+
+        return true;
 }
