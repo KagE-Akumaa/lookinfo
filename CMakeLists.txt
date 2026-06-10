@@ -16,6 +16,7 @@ add_executable(lockinfo
     src/quoteService.cpp
     src/fileHandler.cpp
     src/pathFinder.cpp
+    src/batteryService.cpp
 )
 
 target_include_directories(lockinfo PRIVATE include)
