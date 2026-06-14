@@ -1,4 +1,5 @@
 #include "batteryService.hpp"
+#include "memoryService.hpp"
 #include "pathFinder.hpp"
 #include "quoteService.hpp"
 #include "weather.hpp"
@@ -22,6 +23,7 @@ int main() {
         auto weather_path = *dirPath / "weather.txt";
         auto quotes_path = *dirPath / "quotes.txt";
         auto battery_path = *dirPath / "battery.txt";
+        auto memory_path = *dirPath / "memory.txt";
 
         // Step - 3 Initialize the weather and quotes module
 
@@ -38,6 +40,8 @@ int main() {
 
         BatteryService battery(battery_path);
 
+        MemoryService memory(memory_path);
+
         // Step - 4 Call the update function to run the WeatherService and
         // QuoteService
 
@@ -50,6 +54,10 @@ int main() {
 
         if (!battery.update()) {
                 std::cerr << "Failed to update battery" << std::endl;
+        }
+
+        if (!memory.update()) {
+                std::cerr << "Failed to update memory" << std::endl;
         }
 
         return 0;
