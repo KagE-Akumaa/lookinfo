@@ -33,9 +33,18 @@ BatteryService::batteryParser(const std::string &battery_file) {
         std::string line;
 
         while (std::getline(ss, line)) {
-                // upto == that is the key
+                // upto = that is the key
+                size_t pos = line.find('=');
+
+                if (pos == std::string::npos) {
+                        continue;
+                }
+                std::string_view key = std::string_view(line).substr(0, pos);
+
+                std::string_view value = std::string_view(line).substr(pos + 1);
+
+                battery_map.emplace(key, value);
         }
-        std::cout << battery_file << std::endl;
 
         return battery_map;
 }
@@ -52,11 +61,25 @@ std::optional<BatteryInfo> BatteryService::getBatteryInfo() {
         std::unordered_map<std::string, std::string> parsedValues =
             batteryParser(*file);
 
-        std::string capacity = parsedValues["POWER_SUPPLY_CAPACITY"];
-        std::string status = parsedValues["POWER_SUPPLY_STATUS"];
+        std::string capacity{}, status{};
+
+        auto cap = parsedValues.find("POWER_SUPPLY_CAPACITY");
+        if (cap == parsedValues.end()) {
+                return std::nullopt;
+        }
+
+        capacity = cap->second;
+
+        auto stat = parsedValues.find("POWER_SUPPLY_STATUS");
+        if (stat == parsedValues.end()) {
+                return std::nullopt;
+        }
+
+        status = stat->second;
 
         BatteryInfo b_info;
-        // b_info.percentage = std::stoi(capacity);
+        // NOTE: stoi() can throw if the capacity is like "abs"
+        b_info.percentage = std::stoi(capacity);
         b_info.status = status;
 
         return b_info;
