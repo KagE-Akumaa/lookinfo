@@ -2,6 +2,7 @@
 #include "memoryService.hpp"
 #include "pathFinder.hpp"
 #include "quoteService.hpp"
+#include "scheduler.hpp"
 #include "weather.hpp"
 #include <iostream>
 
@@ -27,7 +28,8 @@ int main() {
 
         // Step - 3 Initialize the weather and quotes module
 
-        // For weather get the api url
+        // TODO: Later just need the location for weather
+        // For now , For weather get the api url
         std::string weather_api_url =
             "https://api.open-meteo.com/v1/"
             "forecast?latitude=31.1044&longitude=77.1666&daily="
@@ -45,20 +47,15 @@ int main() {
         // Step - 4 Call the update function to run the WeatherService and
         // QuoteService
 
-        if (!weather.update()) {
-                std::cerr << "Failed to update weather" << std::endl;
-        }
-        if (!quotes.update()) {
-                std::cerr << "Failed to update quotes" << std::endl;
-        }
+        // Updated Step - 4 Make the scheduler add all the services into the
+        // scheduler and call run function on scheduler
+        //
+        Scheduler scheduler;
+        scheduler.add(&weather, std::chrono::seconds(120));
+        scheduler.add(&memory, std::chrono::seconds(30));
+        scheduler.add(&battery, std::chrono::seconds(60));
+        // scheduler.add(&quotes, std::chrono::hours(12));
 
-        if (!battery.update()) {
-                std::cerr << "Failed to update battery" << std::endl;
-        }
-
-        if (!memory.update()) {
-                std::cerr << "Failed to update memory" << std::endl;
-        }
-
+        scheduler.run();
         return 0;
 }

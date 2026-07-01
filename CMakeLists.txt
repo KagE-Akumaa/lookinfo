@@ -18,6 +18,7 @@ add_executable(lockinfo
     src/pathFinder.cpp
     src/batteryService.cpp
     src/memoryService.cpp
+    src/scheduler.cpp
 )
 
 target_include_directories(lockinfo PRIVATE include)
