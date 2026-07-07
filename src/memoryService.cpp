@@ -99,7 +99,7 @@ bool MemoryService::update() {
                 return false;
         }
 
-        // TODO: Add the string to display on memory_path
+        // Add the string to display on memory_path
 
         long used_kb = mem_info->mem_total_kb - mem_info->mem_available_kb;
 

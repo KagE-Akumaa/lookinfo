@@ -3,6 +3,7 @@
 #include "pathFinder.hpp"
 #include "quoteService.hpp"
 #include "scheduler.hpp"
+#include "wallpaper.hpp"
 #include "weather.hpp"
 #include <iostream>
 
@@ -25,6 +26,7 @@ int main() {
         auto quotes_path = *dirPath / "quotes.txt";
         auto battery_path = *dirPath / "battery.txt";
         auto memory_path = *dirPath / "memory.txt";
+        auto wallpaper_path = *dirPath / "wallpaper.txt";
 
         // Step - 3 Initialize the weather and quotes module
 
@@ -44,9 +46,11 @@ int main() {
 
         MemoryService memory(memory_path);
 
+        WallpaperService wallpaper("/home/akumaa/Wallpapers", wallpaper_path);
+
         // Step - 4 Call the update function to run the WeatherService and
         // QuoteService
-
+        wallpaper.update();
         // Updated Step - 4 Make the scheduler add all the services into the
         // scheduler and call run function on scheduler
         //

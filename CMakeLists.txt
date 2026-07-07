@@ -19,6 +19,7 @@ add_executable(lockinfo
     src/batteryService.cpp
     src/memoryService.cpp
     src/scheduler.cpp
+    src/wallpaper.cpp
 )
 
 target_include_directories(lockinfo PRIVATE include)
