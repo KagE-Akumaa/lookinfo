@@ -7,7 +7,8 @@
 
 WallpaperService::WallpaperService(std::filesystem::path wallpaperDirPath,
                                    std::filesystem::path wallpaperPath)
-    : wallpaperDirPath(wallpaperDirPath), wallpaperPath(wallpaperPath) {}
+    : wallpaperDirPath(std::move(wallpaperDirPath)),
+      wallpaperPath(std::move(wallpaperPath)), rng(std::random_device{}()) {}
 
 std::optional<std::vector<std::filesystem::path>>
 WallpaperService::scanWallpaperDirectory() {
@@ -33,7 +34,7 @@ WallpaperService::scanWallpaperDirectory() {
         return ver;
 }
 
-std::optional<std::filesystem::path> WallpaperService::getWallpaperInfo() {
+std::optional<std::filesystem::path> WallpaperService::chooseWallpaper() {
         //
         auto wallpapers = scanWallpaperDirectory();
 
@@ -48,32 +49,26 @@ std::optional<std::filesystem::path> WallpaperService::getWallpaperInfo() {
                 std::cerr << "No wallpaper found\n";
                 return std::nullopt;
         }
-        // 1. Initialize seed source
-        std::random_device rd;
-
-        // 2. Initialize the random engine with the seed
-        std::mt19937 gen(rd());
-
         // 3. Define the distribution range: [0, size - 1] inclusive
         std::uniform_int_distribution<size_t> distr(0, wallpapers->size() - 1);
 
         // 4. Generate the random index
-        size_t random_index = distr(gen);
+        size_t random_index = distr(rng);
 
         return (*wallpapers)[random_index];
 }
 
 bool WallpaperService::update() {
         //
-        auto wallpaperInfo = getWallpaperInfo();
+        auto wallpaper = chooseWallpaper();
 
-        if (wallpaperInfo == std::nullopt) {
+        if (wallpaper == std::nullopt) {
                 std::cerr << "Error obtaining wallpaper information"
                           << std::endl;
                 return false;
         }
 
-        std::string text = wallpaperInfo->c_str();
+        std::string text = wallpaper->string();
         if (!fileWriter(wallpaperPath, text)) {
                 return false;
         }

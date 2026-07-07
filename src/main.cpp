@@ -50,7 +50,7 @@ int main() {
 
         // Step - 4 Call the update function to run the WeatherService and
         // QuoteService
-        wallpaper.update();
+
         // Updated Step - 4 Make the scheduler add all the services into the
         // scheduler and call run function on scheduler
         //
@@ -58,6 +58,7 @@ int main() {
         scheduler.add(&weather, std::chrono::seconds(120));
         scheduler.add(&memory, std::chrono::seconds(30));
         scheduler.add(&battery, std::chrono::seconds(60));
+        scheduler.add(&wallpaper, std::chrono::seconds(3));
         // scheduler.add(&quotes, std::chrono::hours(12));
 
         scheduler.run();
