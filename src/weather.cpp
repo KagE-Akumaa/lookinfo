@@ -47,10 +47,6 @@ Weather_info WeatherService::getWeatherInfo() {
                         curl_easy_getinfo(curl.get(), CURLINFO_RESPONSE_CODE,
                                           &http_code);
 
-                        std::cout << "HTTP Status Code: " << http_code
-                                  << std::endl;
-                        std::cout << "Response Body: \n"
-                                  << response_body << std::endl;
                 } else {
                         std::cerr << "curl_easy_perform() failed: "
                                   << curl_easy_strerror(res) << std::endl;

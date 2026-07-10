@@ -22,14 +22,24 @@ WallpaperService::scanWallpaperDirectory() {
         }
         // Step 2 read the wallpaper directory using directory_iterator (later
         // recursive directory_iterator)
+        // skip the files for which we don't have permission
         std::vector<std::filesystem::path> ver;
-        for (auto const &entry :
-             std::filesystem::directory_iterator(wallpaperDirPath)) {
-                if (entry.path().extension() == ".jpg" ||
-                    entry.path().extension() == ".png" ||
-                    entry.path().extension() == ".jpeg") {
-                        ver.push_back(entry.path());
+        try {
+                for (auto const &entry :
+                     std::filesystem::recursive_directory_iterator(
+                         wallpaperDirPath, std::filesystem::directory_options::
+                                               skip_permission_denied)) {
+                        if (!entry.is_regular_file()) {
+                                continue;
+                        }
+                        auto ext = entry.path().extension();
+                        if (ext == ".jpg" || ext == ".png" || ext == ".jpeg") {
+                                ver.push_back(entry.path());
+                        }
                 }
+        } catch (const std::filesystem::filesystem_error &e) {
+                std::cerr << e.what() << std::endl;
+                return std::nullopt;
         }
         return ver;
 }
@@ -68,10 +78,20 @@ bool WallpaperService::update() {
                 return false;
         }
 
+        while (wallpaper.value() == lastWallpaper) {
+                wallpaper = chooseWallpaper();
+                if (wallpaper == std::nullopt) {
+                        std::cerr << "Error obtaining wallpaper information"
+                                  << std::endl;
+                        return false;
+                }
+        }
+
         std::string text = wallpaper->string();
         if (!fileWriter(wallpaperPath, text)) {
                 return false;
         }
+        lastWallpaper = wallpaper.value();
 
         return true;
 }

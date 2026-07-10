@@ -18,8 +18,6 @@ int main() {
                 return -1;
         }
 
-        std::cout << *dirPath << std::endl;
-
         // Step - 2 Weather path , quotes path
 
         auto weather_path = *dirPath / "weather.txt";
