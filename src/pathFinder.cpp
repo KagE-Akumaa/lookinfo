@@ -1,5 +1,6 @@
 #include "pathFinder.hpp"
 #include <iostream>
+#include <optional>
 
 // NOTE: This function will give the path to the .cache directory
 std::optional<std::filesystem::path> getCacheDirectory() {
@@ -24,18 +25,17 @@ std::optional<std::filesystem::path> getCacheDirectory() {
 
         // NOTE: Now we need to create the directory if it does not exist
 
-        if (std::filesystem::exists(final_path)) {
-                std::cout << "Directory already exist" << std::endl;
-        } else {
+        if (!std::filesystem::exists(final_path)) {
                 try {
                         if (std::filesystem::create_directories(final_path)) {
                                 std::cout << "Directory created" << std::endl;
                         }
-
                 } catch (std::filesystem::filesystem_error &e) {
                         std::cerr << "Error " << e.what() << std::endl;
+                        return std::nullopt;
                 }
         }
+
         // NOTE: At this point we do have the lookinfo directory in .cache now
         // we need to create the files for weather, quote, time
         return final_path;

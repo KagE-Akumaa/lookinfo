@@ -12,6 +12,7 @@ class WallpaperService : public IService {
         std::mt19937 rng;
         std::optional<std::vector<std::filesystem::path>>
         scanWallpaperDirectory();
+        std::filesystem::path lastWallpaper;
 
       public:
         WallpaperService(std::filesystem::path wallpaperDirPath,
