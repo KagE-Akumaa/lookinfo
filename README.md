@@ -1,7 +1,7 @@
 # LookInfo
 
 [![CI](https://img.shields.io/badge/CI-not%20configured-lightgrey)](#testing)
-[![License](https://img.shields.io/badge/license-not%20yet%20specified-lightgrey)](#license)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue)](#build-instructions)
 
 LookInfo is an experimental Linux information collector written in C++20. It runs in the foreground, periodically gathers selected local and network data, and writes human-readable values to files in a per-user cache directory. Desktop components and scripts can read those files instead of duplicating polling and parsing logic.
@@ -283,4 +283,4 @@ See the [issue tracker](https://github.com/KagE-Akumaa/lookinfo/issues) for curr
 
 ## License
 
-No license has been added to this repository yet. Until a license is provided, reuse, redistribution, and contribution terms are not defined. A license is required before the project can be considered ready for broad open-source adoption.
+LookInfo is distributed under the [MIT License](LICENSE).
