@@ -57,7 +57,7 @@ int main() {
         scheduler.add(&memory, std::chrono::seconds(30));
         scheduler.add(&battery, std::chrono::seconds(60));
         scheduler.add(&wallpaper, std::chrono::seconds(3));
-        // scheduler.add(&quotes, std::chrono::hours(12));
+        scheduler.add(&quotes, std::chrono::seconds(4));
 
         scheduler.run();
         return 0;
