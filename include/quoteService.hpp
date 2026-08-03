@@ -3,7 +3,7 @@
 #include "IService.hpp"
 #include <filesystem>
 #include <string>
-class QuoteService : IService {
+class QuoteService : public IService {
 
       private:
         std::filesystem::path quote_path;
