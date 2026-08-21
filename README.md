@@ -12,7 +12,7 @@ The project is under active development. It does not yet provide a configuration
 
 LookInfo currently collects weather, memory, battery, and wallpaper-path information. Each collector is represented by a service and is scheduled independently by a priority-queue scheduler. Services publish their latest value to files under `$HOME/.cache/lookinfo`.
 
-The current executable uses fixed runtime values, including a weather location, a wallpaper directory, and a battery sysfs path. See [Configuration](#configuration) before running it.
+The current executable uses fixed runtime values, including a weather location and wallpaper directory. Battery devices are discovered from Linux sysfs at runtime. See [Configuration](#configuration) before running it.
 
 ## Motivation
 
@@ -28,7 +28,7 @@ Implemented today:
 - Priority-queue scheduling based on `std::chrono::steady_clock`.
 - Weather retrieval from the Open-Meteo API.
 - Memory usage collection from `/proc/meminfo`.
-- Battery status collection from a fixed Linux sysfs path.
+- Battery status collection through Linux sysfs device discovery.
 - Random wallpaper-path selection from a fixed local directory.
 - File-based cache output under `$HOME/.cache/lookinfo`.
 
@@ -129,7 +129,7 @@ LookInfo does not currently have a configuration file or command-line configurat
 | Weather location | `31.1044, 77.1666` | Used to construct the Open-Meteo URL. |
 | Weather interval | 120 seconds | The README does not promise API availability or freshness. |
 | Memory interval | 30 seconds | Reads `/proc/meminfo`. |
-| Battery interval | 60 seconds | Reads `/sys/class/power_supply/BAT1/uevent`. |
+| Battery interval | 60 seconds | Scans `/sys/class/power_supply` for a device whose `type` is `Battery`, then reads its `uevent` file. |
 | Wallpaper interval | 3 seconds | Recursively scans the wallpaper directory on each update. |
 | Wallpaper directory | `/home/akumaa/Wallpapers` | Change this source value before building if it does not exist on your system. |
 | Cache directory | `$HOME/.cache/lookinfo` | `XDG_CACHE_HOME` is not currently honored. |
@@ -189,11 +189,11 @@ The presentation strings are not a stable long-term API.
 | --- | --- | --- | --- |
 | WeatherService | Open-Meteo HTTP API | Yes, every 120 seconds | `weather.txt` |
 | MemoryService | `/proc/meminfo` | Yes, every 30 seconds | `memory.txt` |
-| BatteryService | `/sys/class/power_supply/BAT1/uevent` | Yes, every 60 seconds | `battery.txt` |
+| BatteryService | First discovered `Battery` device under `/sys/class/power_supply` | Yes, every 60 seconds | `battery.txt` |
 | WallpaperService | Fixed local wallpaper directory | Yes, every 3 seconds | `wallpaper.txt` |
 | QuoteService | `../data/quotes.txt` | No | `quotes.txt` when invoked |
 
-Battery support is currently limited to systems exposing a `BAT1` device. Wallpaper selection recognizes `.jpg`, `.jpeg`, and `.png` extensions.
+Battery discovery reads each power-supply device's `type` file and uses the first device identified as `Battery`. On systems without a battery, `battery.txt` is written as an empty value. Multiple batteries are not aggregated; the selected device depends on the filesystem iteration order. Wallpaper selection recognizes `.jpg`, `.jpeg`, and `.png` extensions.
 
 ## Scheduler Overview
 
@@ -276,7 +276,8 @@ Planned work includes:
 - Graceful shutdown and operational logging.
 - Automated unit and integration tests.
 - CMake installation support and reproducible dependency declarations.
-- Improved battery discovery and portable resource paths.
+- Fixture-based and representative-layout testing for battery discovery.
+- Improved portable resource paths.
 - Optional IPC and plugin exploration after the core runtime is reliable.
 
 See the [issue tracker](https://github.com/KagE-Akumaa/lookinfo/issues) for current work items.
