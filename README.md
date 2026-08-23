@@ -10,7 +10,7 @@ The project is under active development. It does not yet provide a configuration
 
 ## Overview
 
-LookInfo currently collects weather, memory, battery, and wallpaper-path information. Each collector is represented by a service and is scheduled independently by a priority-queue scheduler. Services publish their latest value to files under `$HOME/.cache/lookinfo`.
+LookInfo currently collects weather, memory, battery, wallpaper-path, and quote information. Each collector is represented by a service and is scheduled independently by a priority-queue scheduler. Services publish their latest value to files under `$HOME/.cache/lookinfo`.
 
 The current executable uses fixed runtime values, including a weather location and wallpaper directory. Battery devices are discovered from Linux sysfs at runtime. See [Configuration](#configuration) before running it.
 
@@ -35,7 +35,7 @@ Implemented today:
 Current limitations:
 
 - Runtime settings are compiled into `src/main.cpp`.
-- The quote service exists in the source tree but is not scheduled by the executable.
+- QuoteService is scheduled (default every 4 seconds) and writes `quotes.txt` from `data/quotes.txt` (path is relative to the process working directory).
 - The process runs indefinitely in the foreground and has no graceful signal handling.
 - Cache files are plain presentation text, not a versioned machine-readable API.
 - The project has no active automated test suite.
@@ -49,16 +49,19 @@ flowchart TD
     Scheduler --> Memory[MemoryService]
     Scheduler --> Battery[BatteryService]
     Scheduler --> Wallpaper[WallpaperService]
+    Scheduler --> Quote[QuoteService]
 
     Weather --> WeatherFile[weather.txt]
     Memory --> MemoryFile[memory.txt]
     Battery --> BatteryFile[battery.txt]
     Wallpaper --> WallpaperFile[wallpaper.txt]
+    Quote --> QuoteFile[quotes.txt]
 
     WeatherFile --> Cache[$HOME/.cache/lookinfo]
     MemoryFile --> Cache
     BatteryFile --> Cache
     WallpaperFile --> Cache
+    QuoteFile --> Cache
 ```
 
 The scheduler receives service objects and intervals. It waits until the next due task, calls `update()`, then requeues that task for a later run. Services are responsible for gathering their own data and writing their own cache output.
@@ -132,9 +135,11 @@ LookInfo does not currently have a configuration file or command-line configurat
 | Battery interval | 60 seconds | Scans `/sys/class/power_supply` for a device whose `type` is `Battery`, then reads its `uevent` file. |
 | Wallpaper interval | 3 seconds | Recursively scans the wallpaper directory on each update. |
 | Wallpaper directory | `/home/akumaa/Wallpapers` | Change this source value before building if it does not exist on your system. |
+| Quote interval | 4 seconds | Reads `../data/quotes.txt` relative to the process working directory. |
+| Quote data file | `data/quotes.txt` | Run from the repository root so the relative path resolves. |
 | Cache directory | `$HOME/.cache/lookinfo` | `XDG_CACHE_HOME` is not currently honored. |
 
-The quote service currently uses `../data/quotes.txt` relative to the process working directory, but it is not registered with the scheduler.
+The quote service uses `../data/quotes.txt` relative to the process working directory and is registered with the scheduler (4s interval).
 
 ## Usage Examples
 
@@ -153,6 +158,7 @@ cat "$HOME/.cache/lookinfo/memory.txt"
 cat "$HOME/.cache/lookinfo/battery.txt"
 cat "$HOME/.cache/lookinfo/weather.txt"
 cat "$HOME/.cache/lookinfo/wallpaper.txt"
+cat "$HOME/.cache/lookinfo/quotes.txt"
 ```
 
 A shell consumer can read a value directly:
@@ -191,7 +197,7 @@ The presentation strings are not a stable long-term API.
 | MemoryService | `/proc/meminfo` | Yes, every 30 seconds | `memory.txt` |
 | BatteryService | First discovered `Battery` device under `/sys/class/power_supply` | Yes, every 60 seconds | `battery.txt` |
 | WallpaperService | Fixed local wallpaper directory | Yes, every 3 seconds | `wallpaper.txt` |
-| QuoteService | `../data/quotes.txt` | No | `quotes.txt` when invoked |
+| QuoteService | `../data/quotes.txt` (relative to CWD) | Yes, every 4 seconds | `quotes.txt` |
 
 Battery discovery reads each power-supply device's `type` file and uses the first device identified as `Battery`. On systems without a battery, `battery.txt` is written as an empty value. Multiple batteries are not aggregated; the selected device depends on the filesystem iteration order. Wallpaper selection recognizes `.jpg`, `.jpeg`, and `.png` extensions.
 
