@@ -13,13 +13,16 @@ struct MemoryInfo {
 class MemoryService : public IService {
       private:
         std::filesystem::path memory_path;
+        std::filesystem::path memory_source_path;
         std::optional<std::string> fileHandler();
 
         std::unordered_map<std::string, std::string>
         memoryParser(const std::string &memory_file);
 
       public:
-        MemoryService(std::filesystem::path memory_path);
+        MemoryService(
+            std::filesystem::path memory_path,
+            std::filesystem::path memory_source_path = "/proc/meminfo");
 
         std::optional<MemoryInfo> getMemoryInfo();
 

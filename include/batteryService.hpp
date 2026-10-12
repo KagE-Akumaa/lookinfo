@@ -25,7 +25,9 @@ class BatteryService : public IService {
         batteryParser(const std::string &battery_file);
 
       public:
-        BatteryService(std::filesystem::path battery_path);
+        BatteryService(
+            std::filesystem::path batteryOutputPath,
+            std::filesystem::path batteryPath = "/sys/class/power_supply");
         std::optional<BatteryInfo> getBatteryInfo();
 
         bool update() override;

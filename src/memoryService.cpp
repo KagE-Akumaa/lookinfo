@@ -4,16 +4,16 @@
 #include "fstream"
 #include <cstring>
 #include <iostream>
+#include <utility>
 
-MemoryService::MemoryService(std::filesystem::path memory_path) {
-        this->memory_path = memory_path;
-}
+MemoryService::MemoryService(std::filesystem::path memory_path,
+                             std::filesystem::path memory_source_path)
+    : memory_path(std::move(memory_path)),
+      memory_source_path(std::move(memory_source_path)) {}
 
 std::optional<std::string> MemoryService::fileHandler() {
-        std::string MEMORY_PATH = "/proc/meminfo";
-
         // Step -1 Open the file
-        std::ifstream file(MEMORY_PATH);
+        std::ifstream file(memory_source_path);
 
         if (!file.is_open()) {
                 std::cerr << "Error opening the file" << std::strerror(errno)

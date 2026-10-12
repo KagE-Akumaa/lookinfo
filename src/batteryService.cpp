@@ -7,9 +7,10 @@
 #include <string>
 #include <utility>
 
-BatteryService::BatteryService(std::filesystem::path batteryOutputPath) {
-        this->batteryOutputPath = batteryOutputPath;
-        this->batteryPath = "/sys/class/power_supply";
+BatteryService::BatteryService(std::filesystem::path batteryOutputPath,
+                               std::filesystem::path batteryPath)
+    : batteryPath(std::move(batteryPath)),
+      batteryOutputPath(std::move(batteryOutputPath)) {
 }
 std::optional<std::string>
 BatteryService::fileHandler(const std::string &dirName) {
