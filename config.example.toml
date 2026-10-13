@@ -1,0 +1,29 @@
+
+[general]
+cache_dir = "~/.cache/lookinfo"
+
+[scheduler]
+default_interval_seconds = 60
+
+[weather]
+enabled = true
+interval_seconds = 1800
+latitude = 30.7333
+longitude = 76.7794
+
+[battery]
+enabled = true
+interval_seconds = 30
+
+[memory]
+enabled = true
+interval_seconds = 10
+
+[wallpaper]
+enabled = true
+interval_seconds = 300
+directory = "~/Pictures/Wallpapers"
+
+[quotes]
+enabled = true
+interval_seconds = 3600
