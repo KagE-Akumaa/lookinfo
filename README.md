@@ -4,15 +4,15 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue)](#build-instructions)
 
-LookInfo is an experimental Linux information collector written in C++20. It runs in the foreground, periodically gathers selected local and network data, and writes human-readable values to files in a per-user cache directory. Desktop components and scripts can read those files instead of duplicating polling and parsing logic.
+LookInfo is an experimental Linux information provider written in C++20. It runs in the foreground, periodically gathers selected local and network data, and writes human-readable values to files in a configurable per-user cache directory. Desktop components and scripts can read those files instead of duplicating polling and parsing logic.
 
-The project is under active development. It does not yet provide a configuration file, automated test suite, service-manager integration, graceful shutdown, or a stable cache schema.
+The project is under active development. It currently supports TOML configuration and automated tests, but does not yet provide service-manager integration, graceful shutdown, or a stable cache schema.
 
 ## Overview
 
-LookInfo currently collects weather, memory, battery, wallpaper-path, and quote information. Each collector is represented by a service and is scheduled independently by a priority-queue scheduler. Services publish their latest value to files under `$HOME/.cache/lookinfo`.
+LookInfo currently implements services for weather, memory, battery, wallpaper-path selection, and quotes. Weather, memory, battery, and wallpaper services are currently wired into the application and scheduled independently by a priority-queue scheduler. Services publish their latest value to files under a configured cache directory, falling back to `$HOME/.cache/lookinfo`.
 
-The current executable uses fixed runtime values, including a weather location and wallpaper directory. Battery devices are discovered from Linux sysfs at runtime. See [Configuration](#configuration) before running it.
+The application reads its configuration from `~/.config/lookinfo/config.toml`. Battery devices are discovered from Linux sysfs at runtime. See [Configuration](#configuration) before running it.
 
 ## Motivation
 
@@ -29,16 +29,18 @@ Implemented today:
 - Weather retrieval from the Open-Meteo API.
 - Memory usage collection from `/proc/meminfo`.
 - Battery status collection through Linux sysfs device discovery.
-- Random wallpaper-path selection from a fixed local directory.
-- File-based cache output under `$HOME/.cache/lookinfo`.
+- Random wallpaper-path selection from a configured local directory.
+- TOML configuration for service enablement, intervals, weather coordinates, wallpaper directory, and cache directory.
+- File-based cache output under the configured cache directory.
+- GoogleTest coverage for configuration loading and service behavior.
 
 Current limitations:
 
-- Runtime settings are compiled into `src/main.cpp`.
-- QuoteService is scheduled (default every 4 seconds) and writes `quotes.txt` from `data/quotes.txt` (path is relative to the process working directory).
+- QuoteService is implemented but is not currently registered by `src/main.cpp`.
+- Quote data paths and battery/memory source paths are not configurable yet.
 - The process runs indefinitely in the foreground and has no graceful signal handling.
 - Cache files are plain presentation text, not a versioned machine-readable API.
-- The project has no active automated test suite.
+- There is no systemd service or installation target yet.
 
 ## Architecture Overview
 
@@ -49,19 +51,16 @@ flowchart TD
     Scheduler --> Memory[MemoryService]
     Scheduler --> Battery[BatteryService]
     Scheduler --> Wallpaper[WallpaperService]
-    Scheduler --> Quote[QuoteService]
 
     Weather --> WeatherFile[weather.txt]
     Memory --> MemoryFile[memory.txt]
     Battery --> BatteryFile[battery.txt]
     Wallpaper --> WallpaperFile[wallpaper.txt]
-    Quote --> QuoteFile[quotes.txt]
 
     WeatherFile --> Cache[$HOME/.cache/lookinfo]
     MemoryFile --> Cache
     BatteryFile --> Cache
     WallpaperFile --> Cache
-    QuoteFile --> Cache
 ```
 
 The scheduler receives service objects and intervals. It waits until the next due task, calls `update()`, then requeues that task for a later run. Services are responsible for gathering their own data and writing their own cache output.
@@ -123,27 +122,81 @@ cmake --build build
 
 The build produces `build/lookinfo`.
 
+When GoogleTest is available, CMake also builds `build/lookinfo_tests` and
+registers the tests with CTest.
+
 ## Configuration
 
-LookInfo does not currently have a configuration file or command-line configuration. The following values are fixed in `src/main.cpp` and related service implementations:
+LookInfo loads its configuration from:
+
+```text
+~/.config/lookinfo/config.toml
+```
+
+The loader validates TOML types, positive intervals, coordinate ranges, and
+non-empty paths. Invalid configuration stops startup with an error message.
+The `~` prefix is expanded for configured cache and wallpaper paths.
+
+Example:
+
+```toml
+[general]
+cache_dir = "~/.cache/lookinfo"
+
+[weather]
+enabled = true
+interval_seconds = 1800
+latitude = 30.7333
+longitude = 76.7794
+
+[battery]
+enabled = true
+interval_seconds = 30
+
+[memory]
+enabled = true
+interval_seconds = 10
+
+[wallpaper]
+enabled = false
+interval_seconds = 300
+directory = "~/Pictures/Wallpapers"
+
+[quotes]
+enabled = false
+interval_seconds = 3600
+```
+
+The currently supported settings are:
 
 | Setting | Current value | Notes |
 | --- | --- | --- |
-| Weather location | `31.1044, 77.1666` | Used to construct the Open-Meteo URL. |
-| Weather interval | 120 seconds | The README does not promise API availability or freshness. |
-| Memory interval | 30 seconds | Reads `/proc/meminfo`. |
-| Battery interval | 60 seconds | Scans `/sys/class/power_supply` for a device whose `type` is `Battery`, then reads its `uevent` file. |
-| Wallpaper interval | 3 seconds | Recursively scans the wallpaper directory on each update. |
-| Wallpaper directory | `/home/akumaa/Wallpapers` | Change this source value before building if it does not exist on your system. |
-| Quote interval | 4 seconds | Reads `../data/quotes.txt` relative to the process working directory. |
-| Quote data file | `data/quotes.txt` | Run from the repository root so the relative path resolves. |
-| Cache directory | `$HOME/.cache/lookinfo` | `XDG_CACHE_HOME` is not currently honored. |
+| `weather.enabled` | `false` | Enables weather collection. |
+| `weather.interval_seconds` | `1800` | Polling interval for Open-Meteo. |
+| `weather.latitude` / `longitude` | `0.0` | Used to construct the Open-Meteo URL. |
+| `battery.enabled` | `true` | Enables battery collection. |
+| `battery.interval_seconds` | `30` | Scans `/sys/class/power_supply`. |
+| `memory.enabled` | `true` | Enables memory collection. |
+| `memory.interval_seconds` | `10` | Reads `/proc/meminfo`. |
+| `wallpaper.enabled` | `false` | Enables wallpaper-path selection. |
+| `wallpaper.interval_seconds` | `300` | Scans the configured directory recursively. |
+| `wallpaper.directory` | empty | Directory containing `.jpg`, `.jpeg`, or `.png` files. |
+| `general.cache_dir` | empty | Uses `$HOME/.cache/lookinfo` when empty. |
 
-The quote service uses `../data/quotes.txt` relative to the process working directory and is registered with the scheduler (4s interval).
+Quote settings are parsed by the configuration loader but QuoteService is not
+currently registered by the application. The `[scheduler]` section in the
+example file is reserved for future use and is currently ignored.
 
 ## Usage Examples
 
-Start LookInfo from the repository root after building:
+Create the configuration directory and copy or create a configuration file:
+
+```bash
+mkdir -p ~/.config/lookinfo
+cp config.example.toml ~/.config/lookinfo/config.toml
+```
+
+Review the paths and enabled services before starting LookInfo:
 
 ```bash
 ./build/lookinfo
@@ -158,8 +211,10 @@ cat "$HOME/.cache/lookinfo/memory.txt"
 cat "$HOME/.cache/lookinfo/battery.txt"
 cat "$HOME/.cache/lookinfo/weather.txt"
 cat "$HOME/.cache/lookinfo/wallpaper.txt"
-cat "$HOME/.cache/lookinfo/quotes.txt"
 ```
+
+The actual cache location is controlled by `general.cache_dir`. The commands
+above assume it is empty or set to `$HOME/.cache/lookinfo`.
 
 A shell consumer can read a value directly:
 
@@ -191,13 +246,13 @@ The presentation strings are not a stable long-term API.
 
 ## Supported Modules
 
-| Module | Source | Scheduled by default | Output |
+| Module | Source | Current status | Output |
 | --- | --- | --- | --- |
-| WeatherService | Open-Meteo HTTP API | Yes, every 120 seconds | `weather.txt` |
-| MemoryService | `/proc/meminfo` | Yes, every 30 seconds | `memory.txt` |
-| BatteryService | First discovered `Battery` device under `/sys/class/power_supply` | Yes, every 60 seconds | `battery.txt` |
-| WallpaperService | Fixed local wallpaper directory | Yes, every 3 seconds | `wallpaper.txt` |
-| QuoteService | `../data/quotes.txt` (relative to CWD) | Yes, every 4 seconds | `quotes.txt` |
+| WeatherService | Open-Meteo HTTP API | Scheduled when enabled; default interval is 1800 seconds | `weather.txt` |
+| MemoryService | `/proc/meminfo` | Scheduled when enabled; default interval is 10 seconds | `memory.txt` |
+| BatteryService | First discovered `Battery` device under `/sys/class/power_supply` | Scheduled when enabled; default interval is 30 seconds | `battery.txt` |
+| WallpaperService | Configured local wallpaper directory | Scheduled when enabled; default interval is 300 seconds | `wallpaper.txt` |
+| QuoteService | `../data/quotes.txt` relative to CWD | Implemented, but not currently registered | `quotes.txt` |
 
 Battery discovery reads each power-supply device's `type` file and uses the first device identified as `Battery`. On systems without a battery, `battery.txt` is written as an empty value. Multiple batteries are not aggregated; the selected device depends on the filesystem iteration order. Wallpaper selection recognizes `.jpg`, `.jpeg`, and `.png` extensions.
 
@@ -219,7 +274,8 @@ The scheduler uses `std::chrono::steady_clock`, which is appropriate for measuri
 
 ## Cache Format
 
-The cache directory is created as:
+The cache directory is selected from `general.cache_dir`. If it is empty, the
+default is:
 
 ```text
 $HOME/.cache/lookinfo/
@@ -233,7 +289,7 @@ Each active service writes a single text file. Values are human-readable strings
 | `memory.txt` | Used and total memory in GiB formatted as text. |
 | `battery.txt` | Battery percentage and status formatted as text. |
 | `wallpaper.txt` | Absolute path of a selected image. |
-| `quotes.txt` | Random quote text if QuoteService is invoked; not produced by the default scheduler. |
+| `quotes.txt` | Random quote text if QuoteService is invoked; not currently produced by `main.cpp`. |
 
 ## Development
 
@@ -243,23 +299,27 @@ When investigating or extending the implementation, start with:
 
 1. `include/IService.hpp` for the service interface.
 2. `src/scheduler.cpp` for current scheduling behavior.
-3. `src/main.cpp` for active service registration and hard-coded runtime values.
+3. `src/main.cpp` for active service registration and configuration wiring.
 4. Individual service headers and sources for collection and formatting logic.
 
 Adding a module is not yet documented as a stable extension API. In the current design, a new service needs to implement `IService`, write an output value, and be registered in `src/main.cpp` with an interval. Please open or discuss an issue before introducing a new module so the configuration, error-handling, and cache-format implications can be considered.
 
 ## Testing
 
-There is no supported automated test suite or CTest target at present. The `trash/` directory contains historical experimental files and is not part of the build or test process.
+The project has GoogleTest coverage for the services and configuration loader.
+The `trash/` directory contains historical experimental files and is not part
+of the build or test process.
 
-Before submitting changes, at minimum perform a clean CMake configure and build:
+Configure, build, and run the tests with:
 
 ```bash
 cmake -S . -B build
 cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-Automated unit and integration testing is planned.
+The current test suite covers configuration defaults, valid values, invalid
+values, malformed TOML, filesystem errors, and service behavior.
 
 ## Contributing
 
@@ -277,10 +337,11 @@ For now:
 
 Planned work includes:
 
-- Typed runtime configuration.
 - Robust cache publication and a documented cache schema.
 - Graceful shutdown and operational logging.
-- Automated unit and integration tests.
+- QuoteService integration and configurable quote-data paths.
+- A systemd user-service setup for background operation.
+- Command-line selection of the configuration file.
 - CMake installation support and reproducible dependency declarations.
 - Fixture-based and representative-layout testing for battery discovery.
 - Improved portable resource paths.
