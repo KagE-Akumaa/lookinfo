@@ -1,64 +1,104 @@
 #include "batteryService.hpp"
+#include "configLoader.hpp"
 #include "memoryService.hpp"
 #include "pathFinder.hpp"
 #include "quoteService.hpp"
 #include "scheduler.hpp"
 #include "wallpaper.hpp"
 #include "weather.hpp"
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
+#include <string>
+
+namespace {
+
+std::filesystem::path expandHome(const std::filesystem::path &path,
+                                 const std::filesystem::path &home) {
+        const auto pathString = path.string();
+        if (pathString == "~") {
+                return home;
+        }
+        if (pathString.starts_with("~/")) {
+                return home / pathString.substr(2);
+        }
+        return path;
+}
+
+} // namespace
 
 int main() {
+        try {
+                char *h = std::getenv("HOME");
 
-        // Step - 1 Get the cache directory path
+                if (h == nullptr) {
+                        std::cout << "HOME DOES NOT EXIST" << std::endl;
+                        return 1;
+                }
 
-        auto dirPath = getCacheDirectory();
+                std::filesystem::path home_path = h;
+                const std::filesystem::path configPath =
+                    home_path / ".config" / "lookinfo" / "config.toml";
+                ConfigLoader loader{};
 
-        if (!dirPath) {
-                std::cerr << "Failed to get cache directory\n";
-                return -1;
+                const LookInfoConfig config = loader.load(configPath);
+
+                std::filesystem::path dirPath;
+                if (config.cacheDirectory.empty()) {
+                        const auto defaultCacheDirectory = getCacheDirectory();
+                        if (!defaultCacheDirectory) {
+                                std::cerr << "Failed to get cache directory\n";
+                                return 1;
+                        }
+                        dirPath = *defaultCacheDirectory;
+                } else {
+                        dirPath = expandHome(config.cacheDirectory, home_path);
+                        std::filesystem::create_directories(dirPath);
+                }
+
+                const auto weather_path = dirPath / "weather.txt";
+                const auto battery_path = dirPath / "battery.txt";
+                const auto memory_path = dirPath / "memory.txt";
+                const auto wallpaper_path = dirPath / "wallpaper.txt";
+
+                // Step - 4 Initialize the weather service
+                std::string weather_api_url =
+                    "https://api.open-meteo.com/v1/forecast?latitude=" +
+                    std::to_string(config.weather.latitude) +
+                    "&longitude=" + std::to_string(config.weather.longitude) +
+                    "&daily=temperature_2m_max,temperature_2m_min"
+                    "&current=temperature_2m&timezone=auto&forecast_days=1";
+                WeatherService weather(weather_path, weather_api_url);
+
+                // Initialize the BatteryService
+                BatteryService battery(battery_path);
+                // Initialize the MemoryService
+                MemoryService memory(memory_path);
+                // Initialize the WallpaperService
+                WallpaperService wallpaper(
+                    expandHome(config.wallpaper.directory, home_path),
+                    wallpaper_path);
+                Scheduler scheduler;
+                if (config.weather.enabled) {
+                        scheduler.add(&weather, config.weather.interval);
+                }
+                if (config.memory.enabled) {
+                        scheduler.add(&memory, config.memory.interval);
+                }
+                if (config.battery.enabled) {
+                        scheduler.add(&battery, config.battery.interval);
+                }
+                if (config.wallpaper.enabled) {
+                        scheduler.add(&wallpaper, config.wallpaper.interval);
+                }
+
+                scheduler.run();
+
+        } catch (const std::exception &error) {
+                std::cerr << "LookInfo startup failed: " << error.what()
+                          << '\n';
+                return 1;
         }
 
-        // Step - 2 Weather path , quotes path
-
-        auto weather_path = *dirPath / "weather.txt";
-        auto quotes_path = *dirPath / "quotes.txt";
-        auto battery_path = *dirPath / "battery.txt";
-        auto memory_path = *dirPath / "memory.txt";
-        auto wallpaper_path = *dirPath / "wallpaper.txt";
-
-        // Step - 3 Initialize the weather and quotes module
-
-        // TODO: Later just need the location for weather
-        // For now , For weather get the api url
-        std::string weather_api_url =
-            "https://api.open-meteo.com/v1/"
-            "forecast?latitude=31.1044&longitude=77.1666&daily="
-            "temperature_2m_max,temperature_2m_min&current="
-            "temperature_2m&timezone=auto&forecast_days=1";
-
-        WeatherService weather(weather_path, weather_api_url);
-
-        QuoteService quotes(quotes_path);
-
-        BatteryService battery(battery_path);
-
-        MemoryService memory(memory_path);
-
-        WallpaperService wallpaper("/home/akumaa/Wallpapers", wallpaper_path);
-
-        // Step - 4 Call the update function to run the WeatherService and
-        // QuoteService
-
-        // Updated Step - 4 Make the scheduler add all the services into the
-        // scheduler and call run function on scheduler
-        //
-        Scheduler scheduler;
-        scheduler.add(&weather, std::chrono::seconds(120));
-        scheduler.add(&memory, std::chrono::seconds(30));
-        scheduler.add(&battery, std::chrono::seconds(60));
-        scheduler.add(&wallpaper, std::chrono::seconds(3));
-        scheduler.add(&quotes, std::chrono::seconds(4));
-
-        scheduler.run();
         return 0;
 }
