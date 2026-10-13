@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(LockInfo VERSION 1.0 LANGUAGES CXX)
+project(LookInfo VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -8,9 +8,29 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(CTest)
+include(FetchContent)
+
+# -------------------------------------------------------------
+# Dependencies
+# -------------------------------------------------------------
+
 find_package(CURL REQUIRED)
 
-set(LOCKINFO_SOURCES
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
+)
+
+FetchContent_MakeAvailable(tomlplusplus)
+
+# -------------------------------------------------------------
+# Core library
+# -------------------------------------------------------------
+
+set(LOOKINFO_SOURCES
+    src/configLoader.cpp
     src/weather.cpp
     src/quoteService.cpp
     src/fileHandler.cpp
@@ -19,25 +39,54 @@ set(LOCKINFO_SOURCES
     src/memoryService.cpp
     src/scheduler.cpp
     src/wallpaper.cpp
+    src/configLoader.cpp
 )
 
-add_library(lockinfo_core STATIC ${LOCKINFO_SOURCES})
-
-target_include_directories(lockinfo_core PUBLIC include)
-
-target_link_libraries(lockinfo_core PUBLIC CURL::libcurl)
-
-target_compile_options(lockinfo_core PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
+add_library(lookinfo_core STATIC
+    ${LOOKINFO_SOURCES}
 )
 
-add_executable(lockinfo src/main.cpp)
+target_include_directories(lookinfo_core
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-target_link_libraries(lockinfo PRIVATE lockinfo_core)
+target_link_libraries(lookinfo_core
+    PUBLIC
+        CURL::libcurl
+        tomlplusplus::tomlplusplus
+)
 
-include(CTest)
+target_compile_options(lookinfo_core
+    PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+)
+
+# -------------------------------------------------------------
+# Application executable
+# -------------------------------------------------------------
+
+add_executable(lookinfo
+    src/main.cpp
+)
+
+target_link_libraries(lookinfo
+    PRIVATE
+        lookinfo_core
+)
+
+target_compile_options(lookinfo
+    PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+)
+
+# -------------------------------------------------------------
+# Tests
+# -------------------------------------------------------------
 
 if(BUILD_TESTING)
     find_package(GTest QUIET)
@@ -50,18 +99,32 @@ if(BUILD_TESTING)
         if(TEST_SOURCES)
             include(GoogleTest)
 
-            add_executable(lockinfo_tests ${TEST_SOURCES})
-            target_link_libraries(lockinfo_tests
+            add_executable(lookinfo_tests
+                ${TEST_SOURCES}
+            )
+
+            target_link_libraries(lookinfo_tests
                 PRIVATE
-                    lockinfo_core
+                    lookinfo_core
                     GTest::gtest_main
             )
 
-            gtest_discover_tests(lockinfo_tests)
+            target_compile_options(lookinfo_tests
+                PRIVATE
+                    -Wall
+                    -Wextra
+                    -Wpedantic
+            )
+
+            gtest_discover_tests(lookinfo_tests)
         else()
-            message(STATUS "GoogleTest found, but no test sources were found in tests/")
+            message(STATUS
+                "GoogleTest found, but no test sources were found in tests/"
+            )
         endif()
     else()
-        message(STATUS "GoogleTest not found; building without tests")
+        message(STATUS
+            "GoogleTest not found; building without tests"
+        )
     endif()
 endif()
