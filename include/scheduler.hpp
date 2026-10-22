@@ -27,6 +27,9 @@ class Scheduler {
       public:
         Scheduler() = default;
 
+        Scheduler(const Scheduler &) = delete;
+        Scheduler &operator=(const Scheduler &) = delete;
+
         void add(IService *service, std::chrono::seconds interval);
 
         void run();
